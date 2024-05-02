@@ -1,10 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Preserve vision</title>
+    <link href="../styles/popup.css" rel="stylesheet">
 </head>
 <body>
+<h3 class="container-fluid text-center mt-2">Preserve vision</h3>
+
+<div class="text-center">
+
+    <div class="form-check text-center d-flex justify-content-center ml-3 my-2">
+        <input class="form-check-input me-2" type="checkbox" value="" id="autoAudio">
+        <label class="form-check-label" for="autoAudio">
+            Play audio when it's time for a new break
+        </label>
+    </div>
+
+    <div class="form-check text-center d-flex justify-content-center ml-3 my-2">
+        <input class="form-check-input me-2" type="checkbox" value="" id="showNotification">
+        <label class="form-check-label" for="showNotification">
+            Show notification when it's time for a new break
+        </label>
+    </div>
+
+
+    <div class="my-2">
+        <label for="selectAudio" class="form-label">Select Audio:
+        </label>
+        <select name="selectAudio" id="selectAudio" class="form-select">
+            <option value="alert1.mp3">Alert 1</option>
+            <option value="alert2.mp3">Alert 2</option>
+            <option value="alert3.mp3">Alert 3</option>
+        </select>
+        <div>
+            <label for="volume">Volume:</label>
+            <input style="display: inline-block; margin-top: 5px" type="range" id="volume" name="volume" min="0" max="100">
+        </div>
+        <button id="playAudio" class="btn btn-primary">
+            <i class="fas fa-play"></i> Play
+        </button>
+
+    </div>
+
+</div>
+
+<div class="container-fluid text-center mt-2">
+    <a href="https://spin311.github.io/ProlificStudiesGoogle/" class="float-start" target="_blank">Help</a>
+
+    <a href="https://www.paypal.com/donate/?hosted_button_id=4WXEWMN3QGLGY" class="float-end" target="_blank">Donate</a>
+</div>
 
 </body>
 </html>
+
+<script src="../dist/popup.js"></script>
