@@ -5,11 +5,10 @@ async function setVolume(volume: HTMLInputElement) {
         volume.value =  String(vol);
     }
     volume.addEventListener("change", function () {
-        chrome.storage.sync.set({["volume"]: parseFloat(volume.value) / 100});
+        chrome.storage.sync.set({["volume"]: parseFloat(volume.value)});
     });
 
 }
-
 document.addEventListener('DOMContentLoaded', async function () {
     const autoAudio = document.getElementById("autoAudio") as HTMLInputElement;
     const selectAudio = document.getElementById("selectAudio") as HTMLSelectElement;
@@ -52,10 +51,10 @@ async function setCounter(counter: HTMLSpanElement): Promise<void> {
 }
 
 async function playAlert(): Promise<void> {
-    const result = await chrome.storage.sync.get("audio");
-    let audio = new Audio('../audio/' + result["audio"]);
-    const audioVolume = await chrome.storage.sync.get("volume");
-    audio.volume = audioVolume["volume"];
+    let selectAudio: HTMLSelectElement = document.getElementById("selectAudio") as HTMLSelectElement;
+    let volume: HTMLInputElement = document.getElementById("volume") as HTMLInputElement;
+    let audio: HTMLAudioElement = new Audio('../audio/' + selectAudio.value);
+    audio.volume = parseFloat(String(volume.valueAsNumber / 100));
     await audio.play();
 }
 
@@ -72,6 +71,8 @@ async function setAudioCheckbox(autoAudio: HTMLInputElement): Promise<void> {
     autoAudio.checked = result["audioActive"];
     autoAudio.addEventListener("click", function () {
         chrome.storage.sync.set({["audioActive"]: autoAudio.checked});
+        chrome.runtime.sendMessage({type: 'update-audio', data: autoAudio.checked});
+
     });
 }
 
@@ -80,5 +81,6 @@ async function setShowNotification(showNotification: HTMLInputElement): Promise<
     showNotification.checked = result["showNotification"];
     showNotification.addEventListener("click", function () {
         chrome.storage.sync.set({["showNotification"]: showNotification.checked});
+        chrome.runtime.sendMessage({type: 'update-notifications', data: showNotification.checked});
     });
 }

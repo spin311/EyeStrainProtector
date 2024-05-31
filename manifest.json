@@ -2,22 +2,24 @@
   "manifest_version": 3,
   "name": "Preserve vision",
   "version": "0.5.0",
-  "description": "Google extension to notify you to take a eye break every 20 minutes",
+  "description": "Google extension to notify you to rest your eyes every 20 minutes",
 
   "permissions": [
     "storage",
-    "notifications"
+    "notifications",
+    "offscreen",
+    "alarms"
   ],
   "background": {
     "service_worker": "dist/background.js"
   },
   "action": {
     "default_popup": "popup/popup.html",
-    "title": "Prolific get studies automatically"
+    "title": "Preserve vision extension"
   },
   "icons": {
-    "16": "imgs/logo.png",
-    "48": "imgs/logo.png",
-    "128": "imgs/logo.png"
+    "16": "imgs/icon.png",
+    "48": "imgs/icon.png",
+    "128": "imgs/icon.png"
   }
 }
