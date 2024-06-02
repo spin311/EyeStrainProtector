@@ -4,82 +4,59 @@ import ContextType = chrome.runtime.ContextType;
 const AUDIO_ACTIVE = "audioActive";
 const SHOW_NOTIFICATION = "showNotification";
 const AUDIO = "audio";
-const ICON_URL = 'imgs/icon.png';
-const TITLE = 'Time to rest your eyes!';
-const MESSAGE = 'Look away from the screen and focus on something 20 meters away for the duration of this notification. (20s)';
+const COUNTER = "counter";
+const ICON_URL = 'imgs/logo.png';
+const TITLE = 'Prolific Studies';
+const MESSAGE = 'A new study has been posted on Prolific!';
 let creating: Promise<void> | null; // A global promise to avoid concurrency issues
 let docExists: boolean = false;
-let notificationEnabled: boolean = true;
-let audioEnabled: boolean = true;
+let volume: number = 1.0;
+let audio: string = 'alert1.mp3';
+let shouldSendNotification: boolean = true;
+let shouldPlayAudio: boolean = true;
 
 chrome.runtime.onMessage.addListener(handleMessages);
 
-async function handleMessages(message: { type: any; data: boolean; }): Promise<void> {
-    switch (message.type) {
-        case 'update-audio':
-            audioEnabled = message.data;
-            checkAndCreateAlarm();
-            break;
-        case 'update-notifications':
-            sendNotification();
-            notificationEnabled = message.data;
-            checkAndCreateAlarm();
-            break;
-    }
-}
-
 chrome.runtime.onInstalled.addListener(async (details: { reason: string; }): Promise<void> => {
     if(details.reason === "install"){
-        console.log('Installed');
         await setInitialValues();
         await new Promise(resolve => setTimeout(resolve, 1000));
         await chrome.tabs.create({url: "https://spin311.github.io/ProlificStudiesGoogle/", active: true});
     }
 });
 
-function checkAndCreateAlarm(): void {
-    if (!notificationEnabled && !audioEnabled) return;
-    chrome.alarms.get('eyeRestAlarm', (alarm) => {
-        if (!alarm) {
-            // Create an alarm that fires every 20 minutes
-            chrome.alarms.create('eyeRestAlarm', {periodInMinutes: 20}).then(() => {
-                    chrome.alarms.onAlarm.addListener(async () => {
-                        if (notificationEnabled) sendNotification();
-                        if (audioEnabled) await playAudio();
-                    });
-                }
-            );
-            // Listen for when the alarm fires
 
-        }
-    });
-}
-
-chrome.runtime.onStartup.addListener(async () =>{
-    console.log('Startup');
-    if (!docExists) {
-        await setupOffscreenDocument('offscreen.html');
+async function handleMessages(message: { target: string; type: any; data?: any; }): Promise<void> {
+    // Return early if this message isn't meant for the offscreen document.
+    if (message.target !== 'background') {
+        return;
     }
-    chrome.storage.sync.get([AUDIO_ACTIVE, SHOW_NOTIFICATION], (result) => {
-        console.log(result);
-        notificationEnabled = result[SHOW_NOTIFICATION];
-        audioEnabled = result[AUDIO_ACTIVE];
-        checkAndCreateAlarm();
-
-    });
-});
-
-
-async function setInitialValues(): Promise<void> {
-    await Promise.all([
-        chrome.storage.sync.set({ [AUDIO_ACTIVE]: true }),
-        chrome.storage.sync.set({ [AUDIO]: "alert1.mp3" }),
-        chrome.storage.sync.set({ [SHOW_NOTIFICATION]: true }),
-    ]);
-
+    // Dispatch the message to an appropriate handler.
+    switch (message.type) {
+        case 'play-sound':
+            await playAudio(audio, volume);
+            break;
+        case 'show-notification':
+            sendNotification();
+            break;
+        case 'audio-changed':
+            audio = message.data;
+            break;
+        case 'volume-changed':
+            volume = message.data;
+            break;
+        case 'showNotification-changed':
+            shouldSendNotification = message.data;
+            break;
+        case 'audioActive-changed':
+            shouldPlayAudio = message.data;
+            break;
+    }
 }
 
 async function playAudio(audio:string='alert1.mp3',volume: number = 1.0) {
+
+    await setupOffscreenDocument('audio/audio.html');
     const req = {
         audio: audio,
         volume: volume
@@ -91,35 +68,91 @@ async function playAudio(audio:string='alert1.mp3',volume: number = 1.0) {
     });
 }
 
-function sendNotification(): void {
-    console.log('Sending Notification');
-    chrome.notifications.create({
-        type: 'basic',
-        iconUrl: chrome.runtime.getURL(ICON_URL),
-        title: TITLE,
-        message: MESSAGE
-    }, (notificationId) => {
-        if (chrome.runtime.lastError) {
-            console.log(`Notification Error: ${chrome.runtime.lastError.message}`);
-        } else {
-            console.log(`Notification created with ID: ${notificationId}`);
-            setTimeout(() => {
-                chrome.notifications.clear(notificationId, (wasCleared) => {
-                    if (wasCleared) {
-                        console.log(`Notification with ID: ${notificationId} was cleared.`);
-                    } else if (chrome.runtime.lastError) {
-                        console.log(`Notification Clear Error: ${chrome.runtime.lastError.message}`);
-                    }
-                });
-            }, 20000);
+chrome.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
+    if (tab.url && tab.url.includes('https://app.prolific.com/') && changeInfo.title && !(changeInfo.title.trim() === 'Prolific')) {
+        if (shouldSendNotification) {
+            sendNotification();
+        }
+        if (shouldPlayAudio) {
+            await playAudio(audio, volume);
+            await updateCounter();
+        }
+    }
+});
+
+
+async function setInitialValues(): Promise<void> {
+    await Promise.all([
+        chrome.storage.sync.set({ [AUDIO_ACTIVE]: true }),
+        chrome.storage.sync.set({ [AUDIO]: "alert1.mp3" }),
+        chrome.storage.sync.set({ [SHOW_NOTIFICATION]: true }),
+        chrome.storage.sync.set({ ['volume']: 100 }),
+    ]);
+
+}
+
+chrome.runtime.onStartup.addListener(function(){
+    chrome.storage.sync.get(null, function (result) {
+        if (result) {
+            if (result[AUDIO_ACTIVE] !== undefined) {
+                shouldPlayAudio = result[AUDIO_ACTIVE];
+            }
+            if (result[AUDIO] !== undefined) {
+                audio = result[AUDIO];
+            }
+            if (result[SHOW_NOTIFICATION] !== undefined) {
+                shouldSendNotification = result[SHOW_NOTIFICATION];
+            }
+            if (result['volume'] !== undefined) {
+                volume = result['volume'] / 100;
+            }
         }
     });
+});
+
+function sendNotification(): void {
+    const iconUrl: string = chrome.runtime.getURL(ICON_URL);
+    chrome.notifications.create({
+        type: 'basic',
+        iconUrl: iconUrl,
+        title: TITLE,
+        message: MESSAGE,
+        buttons: [{
+            title: 'Open Prolific'
+        }]
+    });
+}
+chrome.notifications.onButtonClicked.addListener((notifId: string, btnIdx: number): void => {
+    if (btnIdx === 0) {
+        chrome.tabs.create({url: 'https://www.prolific.com'});
+    }
+});
+async function updateBadge(counter: number): Promise<void> {
+    await chrome.action.setBadgeText({text: counter.toString()});
+    await chrome.action.setBadgeBackgroundColor({color: "#FF0000"});
+
+    setTimeout(async (): Promise<void> => {
+        await chrome.action.setBadgeText({text: ''});
+    }, 60000);
+}
+
+async function updateCounter(): Promise<void> {
+    const result = await chrome.storage.sync.get(COUNTER);
+    let counter = result[COUNTER];
+    if (counter === undefined) {
+        counter = 1;
+    }
+    else {
+        counter++;
+    }
+    await chrome.storage.sync.set({ [COUNTER]: counter });
+    await updateBadge(1);
 }
 
 async function setupOffscreenDocument(path: string): Promise<void> {
     // Check all windows controlled by the service worker to see if one
     // of them is the offscreen document with the given path
-    const offscreenUrl = chrome.runtime.getURL(path);
+    const offscreenUrl: string = chrome.runtime.getURL(path);
     const existingContexts = await chrome.runtime.getContexts({
         contextTypes: [ContextType.OFFSCREEN_DOCUMENT],
         documentUrls: [offscreenUrl]
@@ -135,7 +168,7 @@ async function setupOffscreenDocument(path: string): Promise<void> {
         creating = chrome.offscreen.createDocument({
             url: path,
             reasons: [Reason.AUDIO_PLAYBACK],
-            justification: 'Notification'
+            justification: 'Audio playback'
         });
         await creating;
         creating = null;
