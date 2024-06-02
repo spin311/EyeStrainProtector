@@ -18,7 +18,6 @@ async function setVolume(volume: HTMLInputElement) {
 document.addEventListener('DOMContentLoaded', async function () {
     const autoAudio = document.getElementById("autoAudio") as HTMLInputElement;
     const selectAudio = document.getElementById("selectAudio") as HTMLSelectElement;
-    const counter = document.getElementById("counter") as HTMLSpanElement;
     const playAudio = document.getElementById("playAudio") as HTMLButtonElement;
     const showNotification = document.getElementById("showNotification") as HTMLInputElement;
     const volume = document.getElementById("volume") as HTMLInputElement;
@@ -29,10 +28,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     if(selectAudio) {
         await setAudioOption(selectAudio);
-    }
-
-    if(counter) {
-        await setCounter(counter);
     }
 
     if(playAudio) {
@@ -48,13 +43,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 });
 
-async function setCounter(counter: HTMLSpanElement): Promise<void> {
-    const result = await chrome.storage.sync.get("counter");
-    const count = result["counter"];
-    if (count !== undefined) {
-        counter.innerText = count.toString();
-    }
-}
 
 async function playAlert(): Promise<void> {
     await chrome.runtime.sendMessage({

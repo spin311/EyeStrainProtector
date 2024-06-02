@@ -4,16 +4,16 @@ import ContextType = chrome.runtime.ContextType;
 const AUDIO_ACTIVE = "audioActive";
 const SHOW_NOTIFICATION = "showNotification";
 const AUDIO = "audio";
-const COUNTER = "counter";
 const ICON_URL = 'imgs/logo.png';
 const TITLE = 'Prolific Studies';
-const MESSAGE = 'A new study has been posted on Prolific!';
+const MESSAGE = 'Time to rest your eyes! Look away at something 20 meters away for 20 seconds!';
 let creating: Promise<void> | null; // A global promise to avoid concurrency issues
 let docExists: boolean = false;
 let volume: number = 1.0;
 let audio: string = 'alert1.mp3';
 let shouldSendNotification: boolean = true;
 let shouldPlayAudio: boolean = true;
+let minutesTimer: number = 1;
 
 chrome.runtime.onMessage.addListener(handleMessages);
 
@@ -68,17 +68,14 @@ async function playAudio(audio:string='alert1.mp3',volume: number = 1.0) {
     });
 }
 
-chrome.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
-    if (tab.url && tab.url.includes('https://app.prolific.com/') && changeInfo.title && !(changeInfo.title.trim() === 'Prolific')) {
-        if (shouldSendNotification) {
-            sendNotification();
-        }
-        if (shouldPlayAudio) {
-            await playAudio(audio, volume);
-            await updateCounter();
-        }
+setInterval(() => {
+    if (shouldPlayAudio) {
+        playAudio(audio, volume);
     }
-});
+    if (shouldSendNotification) {
+        sendNotification();
+    }
+}, minutesTimer * 60 * 1000);
 
 
 async function setInitialValues(): Promise<void> {
@@ -116,37 +113,8 @@ function sendNotification(): void {
         type: 'basic',
         iconUrl: iconUrl,
         title: TITLE,
-        message: MESSAGE,
-        buttons: [{
-            title: 'Open Prolific'
-        }]
+        message: MESSAGE
     });
-}
-chrome.notifications.onButtonClicked.addListener((notifId: string, btnIdx: number): void => {
-    if (btnIdx === 0) {
-        chrome.tabs.create({url: 'https://www.prolific.com'});
-    }
-});
-async function updateBadge(counter: number): Promise<void> {
-    await chrome.action.setBadgeText({text: counter.toString()});
-    await chrome.action.setBadgeBackgroundColor({color: "#FF0000"});
-
-    setTimeout(async (): Promise<void> => {
-        await chrome.action.setBadgeText({text: ''});
-    }, 60000);
-}
-
-async function updateCounter(): Promise<void> {
-    const result = await chrome.storage.sync.get(COUNTER);
-    let counter = result[COUNTER];
-    if (counter === undefined) {
-        counter = 1;
-    }
-    else {
-        counter++;
-    }
-    await chrome.storage.sync.set({ [COUNTER]: counter });
-    await updateBadge(1);
 }
 
 async function setupOffscreenDocument(path: string): Promise<void> {
