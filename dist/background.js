@@ -25,7 +25,6 @@ let shouldPlayAudio;
 let minutesTimer = 20;
 let notificationClosed = false;
 chrome.notifications.onClicked.addListener((notificationId) => {
-    console.log('onClicked notificationClosed', notificationClosed);
     notificationClosed = true;
 });
 function snoozeNotification() {
@@ -171,7 +170,6 @@ function sendNotification() {
         let duration = 20;
         notificationClosed = false;
         for (let i = 0; i < 4; i++) {
-            console.log('SendNotification notificationClosed', notificationClosed);
             if (notificationClosed) {
                 break;
             }

@@ -17,7 +17,6 @@ let minutesTimer: number = 20;
 let notificationClosed: boolean = false;
 
 chrome.notifications.onClicked.addListener((notificationId): void => {
-    console.log('onClicked notificationClosed', notificationClosed);
     notificationClosed = true;
 });
 
@@ -167,7 +166,6 @@ async function sendNotification(): Promise<void> {
     let duration: number = 20;
     notificationClosed = false;
     for (let i = 0; i < 4; i++) {
-        console.log('SendNotification notificationClosed', notificationClosed);
         if (notificationClosed) {
             break;
         }

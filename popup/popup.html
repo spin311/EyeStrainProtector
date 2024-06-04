@@ -13,14 +13,28 @@
     <div class="form-check d-flex justify-content-center ml-3 my-2">
         <input class="form-check-input me-2" type="checkbox" value="" id="autoAudio">
         <label class="form-check-label" for="autoAudio">
-            Play audio when it is time to rest your eyes
+            Play audio
         </label>
     </div>
 
     <div class="form-check d-flex justify-content-center ml-3 my-2">
         <input class="form-check-input me-2" type="checkbox" value="" id="showNotification">
         <label class="form-check-label" for="showNotification">
-            Show notification when it is time to rest your eyes
+            Show notification
+        </label>
+    </div>
+
+    <div class="my-2">
+        <input type="number" id="remindersTime" value="20" min="1" max="480">
+        <label for="remindersTime">
+            Time between reminders (mins)
+        </label>
+    </div>
+
+    <div class="my-2">
+        <input type="number" id="snoozeTime" value="5" min="1" max="480">
+        <label for="snoozeTime">
+            Time between snooze (mins)
         </label>
     </div>
 
