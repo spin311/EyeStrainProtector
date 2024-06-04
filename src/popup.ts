@@ -49,6 +49,19 @@ async function playAlert(): Promise<void> {
         type: 'play-sound',
         target: 'background',
     });
+    await chrome.runtime.sendMessage({
+        type: 'show-notification',
+        target: 'background',
+    });
+    const playAudio = document.getElementById("playAudio") as HTMLButtonElement;
+    playAudio.disabled = true;
+    playAudio.classList.remove("btn-success");
+    playAudio.classList.add("btn-fail");
+    setTimeout(() => {
+        playAudio.disabled = false;
+        playAudio.classList.remove("btn-fail");
+        playAudio.classList.add("btn-success");
+    }, 500);
 }
 
 async function setAudioOption(selectAudio: HTMLSelectElement): Promise<void> {
