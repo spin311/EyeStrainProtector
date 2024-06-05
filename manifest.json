@@ -15,7 +15,13 @@
   },
   "action": {
     "default_popup": "popup/popup.html",
-    "title": "Preserve vision extension"
+    "title": "Preserve vision extension",
+    "default_icon": {
+      "16": "imgs/icon.png",
+      "32": "imgs/iconBig2.png",
+      "48": "imgs/iconBig2.png",
+      "128": "imgs/iconBig2.png"
+    }
   },
   "icons": {
       "16": "imgs/icon.png",

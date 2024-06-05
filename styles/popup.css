@@ -59,13 +59,19 @@ body {
     margin-left: 2rem;
 
 }
-
+.ml-1 {
+    margin-left: 1rem;
+}
 .mt-2 {
     margin-top: 0.5rem !important;
 }
 
 .m-3 {
     margin: 1rem !important;
+}
+
+#volume, #showNotification, #autoAudio {
+    accent-color: #7ed63f;
 }
 
 .btn {
@@ -95,7 +101,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto auto;
-    gap: 1em;
+    gap: 0.3em;
 }
 
 .off {
@@ -108,13 +114,13 @@ body {
     grid-row: 1 / span 2;
     display: flex;
     align-items: center;
-    margin-left: 40px;
+    margin-left: 60px;
 }
 
 
-.links {
-    text-decoration-line: none;
-}
+/*.links {*/
+/*    text-decoration-line: none;*/
+/*}*/
 
 .btn-fail {
     background-color: #5b5f5c;border-color: #5b5f5c;
@@ -167,3 +173,38 @@ body {
     width: 16px;
     height: 16px;
 }
+a {
+    text-decoration: none;
+    color: #18272F;
+    font-weight: 700;
+    position: relative;
+}
+#donateImg {
+    visibility: hidden;
+}
+
+a::before {
+    content: '';
+    background-color: hsla(133, 61%, 58%, 0.75);
+    position: absolute;
+    left: 0;
+    bottom: 3px;
+    width: 100%;
+    height: 8px;
+    z-index: -1;
+    transition: all .3s ease-in-out;
+}
+
+a:hover::before {
+    bottom: 0;
+    height: 100%;
+}
+
+/* Presentational Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    line-height: 1.5;
+}
+
+

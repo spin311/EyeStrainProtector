@@ -10,6 +10,15 @@ document.addEventListener('DOMContentLoaded', async function (): Promise<void> {
     const reminderTime: HTMLInputElement = document.getElementById('reminderTime') as HTMLInputElement;
     const snoozeTime: HTMLInputElement = document.getElementById('snoozeTime') as HTMLInputElement;
     const notificationTime: HTMLInputElement = document.getElementById('notificationTime') as HTMLInputElement;
+    const donateText: HTMLElement | null = document.getElementById('donateText');
+    const donateImg: HTMLElement | null = document.getElementById('donateImg');
+
+    if (donateImg && donateText) {
+        donateText.addEventListener('mouseover', function() {
+            donateImg.style.visibility = 'visible';
+        });
+    }
+
     if (autoAudio) {
         await setAudioCheckbox(autoAudio);
     }
@@ -69,13 +78,13 @@ document.addEventListener('DOMContentLoaded', async function (): Promise<void> {
         }
         toggleActive.addEventListener('click', async function () {
             const result = await chrome.storage.sync.get('active');
-            const active = result['active'];
-            await chrome.storage.sync.set({ 'active': !active });
+            const active: boolean = !result['active'];
+            await chrome.storage.sync.set({ 'active': active });
             toggleActive.classList.toggle('off');
             await chrome.runtime.sendMessage({
                 type: 'toggle-active',
                 target: 'background',
-                data: !active
+                data: active
             });
         });
     }

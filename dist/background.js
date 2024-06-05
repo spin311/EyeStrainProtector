@@ -100,7 +100,7 @@ function getMinutesTimer() {
     return __awaiter(this, void 0, void 0, function* () {
         return yield new Promise((resolve) => {
             chrome.storage.sync.get(REMINDER_TIME, function (result) {
-                resolve(result[REMINDER_TIME] || 20);
+                resolve(Number(result[REMINDER_TIME]) || 20);
             });
         });
     });
@@ -109,8 +109,12 @@ function toggleActive(active) {
     return __awaiter(this, void 0, void 0, function* () {
         yield chrome.alarms.clearAll();
         if (active) {
+            yield chrome.action.setIcon({ path: '/imgs/icon.png' });
             minutesTimer = yield getMinutesTimer();
             yield chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
+        }
+        else {
+            yield chrome.action.setIcon({ path: '/imgs/iconbw.png' });
         }
     });
 }
@@ -226,7 +230,7 @@ function getNotificationCount() {
                     reject(chrome.runtime.lastError);
                 }
                 else {
-                    resolve(result[NOTIFICATION_TIME] || 4);
+                    resolve(Number(result[NOTIFICATION_TIME]) || 4);
                 }
             });
         });
@@ -240,7 +244,7 @@ function getSnoozeTime() {
                     reject(chrome.runtime.lastError);
                 }
                 else {
-                    resolve(result[SNOOZE_TIME] || 5);
+                    resolve(Number(result[SNOOZE_TIME]) || 5);
                 }
             });
         });

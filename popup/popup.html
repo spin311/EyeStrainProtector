@@ -7,7 +7,7 @@
 <body>
 <h1 class=" mt-2 heading">Preserve Vision</h1>
 
-<div class="text-align">
+<div class="ml-1">
 
 
     <div class="grid-container">
@@ -57,7 +57,7 @@
     </div>
 
 
-    <div class="my-2 text-center">
+    <div class="my-2">
         <label for="selectAudio" class="form-label">Select Audio:
         </label>
         <select name="selectAudio" id="selectAudio" class="form-select">
@@ -69,19 +69,27 @@
             <label for="volume">Volume:</label>
             <input style="display: inline-block; margin-top: 5px" type="range" id="volume" value="100" name="volume" min="0" max="100">
         </div>
-        <button id="playAudio" class="btn btn-success">
-            <i class="fas fa-play"></i> Test
-        </button>
 
     </div>
 
 </div>
 
+    <div class="text-center">
+        <button id="playAudio" class="btn btn-success">
+            <i class="fas fa-play"></i> Test
+        </button>
+    </div>
+
+
+
 <div class="container-fluid mt-2">
-    <a href="https://spin311.github.io/MicrosoftRewardsWebsite#features" class="float-start links" target="_blank">Help</a>
+    <span>
+        <a href="https://github.com/spin311/preserveVisionExtension" class="float-start" target="_blank" style="margin-right: 5px">Github</a>
+        <img src="/imgs/github.png" alt="GitHubLogo">
+    </span>
     <span class="float-end" style="display: flex; align-items: center;">
-    <a href="https://www.paypal.com/donate/?hosted_button_id=4WXEWMN3QGLGY" class="links" target="_blank">Donate</a>
-    <img src="/imgs/justAGirlSmol.png" alt="Cat">
+    <a href="https://www.paypal.com/donate/?hosted_button_id=4WXEWMN3QGLGY" class="" target="_blank" id="donateText">Donate</a>
+    <img src="/imgs/justAGirlSmol.png" alt="Cat" id="donateImg">
   </span>
 </div>
 

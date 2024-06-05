@@ -20,6 +20,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const reminderTime = document.getElementById('reminderTime');
         const snoozeTime = document.getElementById('snoozeTime');
         const notificationTime = document.getElementById('notificationTime');
+        const donateText = document.getElementById('donateText');
+        const donateImg = document.getElementById('donateImg');
+        if (donateImg && donateText) {
+            donateText.addEventListener('mouseover', function () {
+                donateImg.style.visibility = 'visible';
+            });
+        }
         if (autoAudio) {
             yield setAudioCheckbox(autoAudio);
         }
@@ -75,13 +82,13 @@ document.addEventListener('DOMContentLoaded', function () {
             toggleActive.addEventListener('click', function () {
                 return __awaiter(this, void 0, void 0, function* () {
                     const result = yield chrome.storage.sync.get('active');
-                    const active = result['active'];
-                    yield chrome.storage.sync.set({ 'active': !active });
+                    const active = !result['active'];
+                    yield chrome.storage.sync.set({ 'active': active });
                     toggleActive.classList.toggle('off');
                     yield chrome.runtime.sendMessage({
                         type: 'toggle-active',
                         target: 'background',
-                        data: !active
+                        data: active
                     });
                 });
             });

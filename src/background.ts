@@ -95,7 +95,7 @@ function getSnoozeMessage(duration: number): string {
 async function getMinutesTimer(): Promise<number> {
     return await new Promise((resolve): void => {
         chrome.storage.sync.get(REMINDER_TIME, function (result): void {
-            resolve(result[REMINDER_TIME] || 20);
+            resolve(Number(result[REMINDER_TIME]) || 20);
         });
     });
 }
@@ -103,8 +103,12 @@ async function getMinutesTimer(): Promise<number> {
 async function toggleActive(active: boolean): Promise<void> {
     await chrome.alarms.clearAll();
     if (active) {
+        await chrome.action.setIcon({path: '/imgs/icon.png'});
         minutesTimer = await getMinutesTimer();
         await chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
+    }
+    else {
+        await chrome.action.setIcon({path: '/imgs/iconbw.png'});
     }
 }
 
@@ -221,7 +225,7 @@ async function getNotificationCount(): Promise<number> {
             if (chrome.runtime.lastError) {
                 reject(chrome.runtime.lastError);
             } else {
-                resolve(result[NOTIFICATION_TIME] || 4);
+                resolve(Number(result[NOTIFICATION_TIME]) || 4);
             }
         });
     });
@@ -233,7 +237,7 @@ async function getSnoozeTime(): Promise<number> {
             if (chrome.runtime.lastError) {
                 reject(chrome.runtime.lastError);
             } else {
-                resolve(result[SNOOZE_TIME] || 5);
+                resolve(Number(result[SNOOZE_TIME]) || 5);
             }
         });
     });
