@@ -91,6 +91,25 @@ body {
     background-color: #1ec418;
     border-color: #7bde42;
 }
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 1em;
+}
+
+.off {
+    -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+    filter: grayscale(100%);
+}
+
+.button-container {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: flex;
+    align-items: center;
+    margin-left: 40px;
+}
 
 
 .links {

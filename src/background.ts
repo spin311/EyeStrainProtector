@@ -7,6 +7,11 @@ const AUDIO = "audio";
 const VOLUME = "volume";
 const ICON_URL = 'imgs/icon.png';
 const TITLE = 'Preserve vision';
+const NOTIFICATION_TIME = 'notificationTime';
+const SNOOZE_TIME = 'snoozeTime';
+const REST_ALARM = 'restAlarm';
+const SNOOZE_ALARM = 'snoozeAlarm';
+const REMINDER_TIME = 'reminderTime';
 let creating: Promise<void> | null; // A global promise to avoid concurrency issues
 let docExists: boolean = false;
 let volume: number;
@@ -14,32 +19,29 @@ let audio: string;
 let shouldSendNotification: boolean;
 let shouldPlayAudio: boolean;
 let minutesTimer: number = 20;
+let snoozeTime: number;
 let notificationClosed: boolean = false;
-
-chrome.notifications.onClicked.addListener((notificationId): void => {
-    notificationClosed = true;
-});
+let notificationCount: number;
 
 async function snoozeNotification(): Promise<void> {
     await chrome.alarms.clearAll();
-    await chrome.alarms.create('snoozeAlarm', { delayInMinutes: 5 });
+    await chrome.alarms.create(SNOOZE_ALARM, { delayInMinutes: snoozeTime });
 }
+chrome.runtime.onMessage.addListener(handleMessages);
 
-chrome.notifications.onButtonClicked.addListener(async (notificationId: string, buttonIndex: number) => {
+chrome.notifications.onClicked.addListener((notificationId: string): void => {
+    notificationClosed = true;
+});
+
+chrome.notifications.onButtonClicked.addListener(async (_notificationId: string, buttonIndex: number): Promise<void> => {
     notificationClosed = true;
    if (buttonIndex === 0) {
             await snoozeNotification();
     }
 });
 
-chrome.notifications.onClosed.addListener((notificationId, byUser): void => {
-    notificationClosed = true;
-});
-
-chrome.runtime.onMessage.addListener(handleMessages);
-chrome.alarms.create('restAlarm', { periodInMinutes: minutesTimer });
 chrome.runtime.onInstalled.addListener(async (details: { reason: string; }): Promise<void> => {
-    chrome.runtime.onMessage.addListener(handleMessages);
+    await chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
     if(details.reason === "install"){
         await setInitialValues();
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -47,12 +49,63 @@ chrome.runtime.onInstalled.addListener(async (details: { reason: string; }): Pro
     }
 });
 
-chrome.runtime.onStartup.addListener(function(): void {
-    chrome.runtime.onMessage.addListener(handleMessages);
+chrome.runtime.onStartup.addListener(async function(): Promise<void> {
+    minutesTimer = await getMinutesTimer();
+    await chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
 });
 
-function getMessage(duration: number): string {
-    return `Time to rest your eyes! Look away at something 20 meters away for duration of this message (${duration}s)`;
+chrome.storage.onChanged.addListener(async(changes, areaName : chrome.storage.AreaName): Promise<void> => {
+    if (areaName === 'sync') {
+        for (let key in changes) {
+            const storageChange: chrome.storage.StorageChange = changes[key];
+            switch (key) {
+                case SNOOZE_TIME:
+                    snoozeTime = Number(storageChange.newValue);
+                    break;
+                case REMINDER_TIME:
+                    minutesTimer = Number(storageChange.newValue);
+                    await chrome.alarms.clearAll();
+                    await chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
+                    break;
+                case AUDIO:
+                    audio = String(storageChange.newValue);
+                    break;
+                case VOLUME:
+                    volume = Number(storageChange.newValue) / 100;
+                    break;
+                case AUDIO_ACTIVE:
+                    shouldPlayAudio = Boolean(storageChange.newValue);
+                    break;
+                case SHOW_NOTIFICATION:
+                    shouldSendNotification = Boolean(storageChange.newValue);
+                    break;
+                case NOTIFICATION_TIME:
+                    notificationCount = Number(storageChange.newValue);
+                    break;
+            }
+        }
+
+    }
+});
+
+function getSnoozeMessage(duration: number): string {
+    return `Snooze (${duration}min) `;
+}
+
+async function getMinutesTimer(): Promise<number> {
+    return await new Promise((resolve): void => {
+        chrome.storage.sync.get(REMINDER_TIME, function (result): void {
+            resolve(result[REMINDER_TIME] || 20);
+        });
+    });
+}
+
+async function toggleActive(active: boolean): Promise<void> {
+    await chrome.alarms.clearAll();
+    if (active) {
+        minutesTimer = await getMinutesTimer();
+        await chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
+    }
 }
 
 async function handleMessages(message: { target: string; type: any; data?: any; }): Promise<void> {
@@ -79,24 +132,16 @@ async function handleMessages(message: { target: string; type: any; data?: any; 
             }
             break;
         case 'show-notification':
-            sendNotification();
+            await sendNotification();
             break;
-        case 'audio-changed':
-            audio = message.data;
+        case 'toggle-active':
+            await toggleActive(message.data);
             break;
-        case 'volume-changed':
-            volume = message.data;
-            break;
-        case 'showNotification-changed':
-            shouldSendNotification = message.data;
-            break;
-        case 'audioActive-changed':
-            shouldPlayAudio = message.data;
-            break;
+
     }
 }
 
-async function playAudio(audio:string='alert1.mp3',volume: number = 1.0) {
+async function playAudio(audio:string='alert1.mp3',volume: number = 1.0): Promise<void> {
 
     await setupOffscreenDocument('audio/audio.html');
     const req = {
@@ -114,7 +159,7 @@ function handleAlarmActions(): void {
     if (shouldSendNotification) {
         sendNotification();
     } else {
-        chrome.storage.sync.get(SHOW_NOTIFICATION, function (result) {
+        chrome.storage.sync.get(SHOW_NOTIFICATION, function (result): void {
             if (result) {
                 shouldSendNotification = result[SHOW_NOTIFICATION];
                 if (shouldSendNotification) {
@@ -126,7 +171,7 @@ function handleAlarmActions(): void {
     if (shouldPlayAudio && audio && volume) {
         playAudio(audio, volume);
     } else {
-        chrome.storage.sync.get([AUDIO_ACTIVE, VOLUME, AUDIO], function (result) {
+        chrome.storage.sync.get([AUDIO_ACTIVE, VOLUME, AUDIO], function (result): void {
             if (result) {
                 shouldPlayAudio = result[AUDIO_ACTIVE];
                 volume = result[VOLUME] / 100;
@@ -139,13 +184,13 @@ function handleAlarmActions(): void {
     }
 }
 
-chrome.alarms.onAlarm.addListener(async (alarm): Promise<void> => {
-    if (alarm.name === 'snoozeAlarm') {
+chrome.alarms.onAlarm.addListener(async (alarm: chrome.alarms.Alarm): Promise<void> => {
+    if (alarm.name === SNOOZE_ALARM) {
         handleAlarmActions();
-        await chrome.alarms.clear('snoozeAlarm');
-        await chrome.alarms.create('restAlarm', { periodInMinutes: minutesTimer });
+        await chrome.alarms.clear(SNOOZE_ALARM);
+        await chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
     }
-    else if (alarm.name === 'restAlarm') {
+    else if (alarm.name === REST_ALARM) {
         handleAlarmActions();
     }
 });
@@ -157,15 +202,55 @@ async function setInitialValues(): Promise<void> {
         chrome.storage.sync.set({ [AUDIO]: "alert1.mp3" }),
         chrome.storage.sync.set({ [SHOW_NOTIFICATION]: true }),
         chrome.storage.sync.set({ [VOLUME]: 100 }),
+        chrome.storage.sync.set({ [NOTIFICATION_TIME]: 4 }),
+        chrome.storage.sync.set({ [SNOOZE_TIME]: 5 }),
+        chrome.storage.sync.set({ REMINDER_TIME: 20 }),
+        chrome.storage.sync.set({ 'active': true })
+        
     ]);
 
 }
 
+function getMessage(duration: number): string {
+    return `Time to rest your eyes! Look away at something 20 meters away for duration of this message (${duration}s)`;
+}
+
+async function getNotificationCount(): Promise<number> {
+    return new Promise((resolve, reject): void => {
+        chrome.storage.sync.get(NOTIFICATION_TIME, function (result) {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+            } else {
+                resolve(result[NOTIFICATION_TIME] || 4);
+            }
+        });
+    });
+}
+
+async function getSnoozeTime(): Promise<number> {
+    return new Promise((resolve, reject) => {
+        chrome.storage.sync.get(SNOOZE_TIME, function (result) {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+            } else {
+                resolve(result[SNOOZE_TIME] || 5);
+            }
+        });
+    });
+}
+
 async function sendNotification(): Promise<void> {
     const iconUrl: string = chrome.runtime.getURL(ICON_URL);
-    let duration: number = 20;
+    if (!notificationCount) {
+        notificationCount = await getNotificationCount();
+    }
+
+    if (!snoozeTime) {
+        snoozeTime = await getSnoozeTime();
+    }
+    let duration: number = notificationCount * 5;
     notificationClosed = false;
-    for (let i = 0; i < 4; i++) {
+    for (let i: number = 0; i < notificationCount; i++) {
         if (notificationClosed) {
             break;
         }
@@ -174,7 +259,7 @@ async function sendNotification(): Promise<void> {
                 type: 'basic',
                 iconUrl: iconUrl,
                 title: TITLE,
-                buttons: [{title: 'Snooze (5min)'},{ title: 'Close' }],
+                buttons: [{title: getSnoozeMessage(snoozeTime)},{ title: 'Close' }],
                 message: getMessage(duration)
             }, function(notificationId: string): void {
                 setTimeout((): void => {
@@ -191,7 +276,7 @@ async function setupOffscreenDocument(path: string): Promise<void> {
     // Check all windows controlled by the service worker to see if one
     // of them is the offscreen document with the given path
     const offscreenUrl: string = chrome.runtime.getURL(path);
-    const existingContexts = await chrome.runtime.getContexts({
+    const existingContexts: chrome.runtime.ExtensionContext[] = await chrome.runtime.getContexts({
         contextTypes: [ContextType.OFFSCREEN_DOCUMENT],
         documentUrls: [offscreenUrl]
     });
