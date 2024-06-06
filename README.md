@@ -8,10 +8,6 @@ If you like the extension, please give it a star on GitHub! <img src="imgs/githu
 
 ## Support Our Efforts
 
-You can support our efforts to keep the internet free with a donation!
-
-### Support Our Work
-
 Donations help me make tools like this for free in my spare time. Any amount helps! ❤️
 
 [![Donate with PayPal button](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=4WXEWMN3QGLGY)
@@ -20,8 +16,8 @@ Donations help me make tools like this for free in my spare time. Any amount hel
 
 For notifications to work, you must enable them on your browser AND on your system.
 
-![Enable on Google](imgs/enableGoogle.png)
-![Enable on Windows](imgs/enableWindows.png)
+![Enable on Google](docs/imgs/enableGoogle.png)
+![Enable on Windows](docs/imgs/enableWindows.png)
 
 ## How to Use the Extension
 
@@ -37,11 +33,11 @@ For notifications to work, you must enable them on your browser AND on your syst
 10. [GitHub page for extension](https://github.com/spin311/EyeStrainProtector)
 11. [Donate with PayPal or any credit card](https://www.paypal.com/donate/?hosted_button_id=4WXEWMN3QGLGY)
 
-![Popup Screenshot](imgs/popup.png)
+![Popup Screenshot](docs/styles/popup.png)
 
 Make sure to pin the extension
 
-![Pin extension](imgs/pin.png)
+![Pin extension](docs/styles/pin.png)
 
 ## Contact
 
