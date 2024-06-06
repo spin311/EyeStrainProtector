@@ -21,8 +21,8 @@ const SNOOZE_TIME = 'snoozeTime';
 const REST_ALARM = 'restAlarm';
 const SNOOZE_ALARM = 'snoozeAlarm';
 const REMINDER_TIME = 'reminderTime';
+const ACTIVE = 'active';
 let creating; // A global promise to avoid concurrency issues
-let docExists = false;
 let volume;
 let audio;
 let shouldSendNotification;
@@ -38,7 +38,7 @@ function snoozeNotification() {
     });
 }
 chrome.runtime.onMessage.addListener(handleMessages);
-chrome.notifications.onClicked.addListener((notificationId) => {
+chrome.notifications.onClicked.addListener((_notificationId) => {
     notificationClosed = true;
 });
 chrome.notifications.onButtonClicked.addListener((_notificationId, buttonIndex) => __awaiter(void 0, void 0, void 0, function* () {
@@ -52,13 +52,16 @@ chrome.runtime.onInstalled.addListener((details) => __awaiter(void 0, void 0, vo
     if (details.reason === "install") {
         yield setInitialValues();
         yield new Promise(resolve => setTimeout(resolve, 1000));
-        yield chrome.tabs.create({ url: "https://spin311.github.io/ProlificStudiesGoogle/", active: true });
+        yield chrome.tabs.create({ url: "https://spin311.github.io/EyeStrainProtector/", active: true });
     }
 }));
 chrome.runtime.onStartup.addListener(function () {
     return __awaiter(this, void 0, void 0, function* () {
-        minutesTimer = yield getMinutesTimer();
-        yield chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
+        const shouldSendAlarm = yield getValueFromStorage(ACTIVE, true);
+        if (shouldSendAlarm) {
+            minutesTimer = yield getValueFromStorage(REMINDER_TIME, 20);
+            yield chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
+        }
     });
 });
 chrome.storage.onChanged.addListener((changes, areaName) => __awaiter(void 0, void 0, void 0, function* () {
@@ -71,8 +74,11 @@ chrome.storage.onChanged.addListener((changes, areaName) => __awaiter(void 0, vo
                     break;
                 case REMINDER_TIME:
                     minutesTimer = Number(storageChange.newValue);
-                    yield chrome.alarms.clearAll();
-                    yield chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
+                    const active = yield getValueFromStorage(ACTIVE, true);
+                    if (active) {
+                        yield chrome.alarms.clearAll();
+                        yield chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
+                    }
                     break;
                 case AUDIO:
                     audio = String(storageChange.newValue);
@@ -96,12 +102,10 @@ chrome.storage.onChanged.addListener((changes, areaName) => __awaiter(void 0, vo
 function getSnoozeMessage(duration) {
     return `Snooze (${duration}min) `;
 }
-function getMinutesTimer() {
-    return __awaiter(this, void 0, void 0, function* () {
-        return yield new Promise((resolve) => {
-            chrome.storage.sync.get(REMINDER_TIME, function (result) {
-                resolve(Number(result[REMINDER_TIME]) || 20);
-            });
+function getValueFromStorage(key, defaultValue) {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(key, function (result) {
+            resolve((result[key] !== undefined) ? result[key] : defaultValue);
         });
     });
 }
@@ -110,7 +114,7 @@ function toggleActive(active) {
         yield chrome.alarms.clearAll();
         if (active) {
             yield chrome.action.setIcon({ path: '/imgs/icon.png' });
-            minutesTimer = yield getMinutesTimer();
+            minutesTimer = yield getValueFromStorage(REMINDER_TIME, 20);
             yield chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
         }
         else {
@@ -143,7 +147,7 @@ function handleMessages(message) {
                 }
                 break;
             case 'show-notification':
-                yield sendNotification();
+                yield sendNotification(true);
                 break;
             case 'toggle-active':
                 yield toggleActive(message.data);
@@ -196,13 +200,10 @@ function handleAlarmActions() {
     }
 }
 chrome.alarms.onAlarm.addListener((alarm) => __awaiter(void 0, void 0, void 0, function* () {
+    handleAlarmActions();
     if (alarm.name === SNOOZE_ALARM) {
-        handleAlarmActions();
         yield chrome.alarms.clear(SNOOZE_ALARM);
         yield chrome.alarms.create(REST_ALARM, { periodInMinutes: minutesTimer });
-    }
-    else if (alarm.name === REST_ALARM) {
-        handleAlarmActions();
     }
 }));
 function setInitialValues() {
@@ -214,50 +215,22 @@ function setInitialValues() {
             chrome.storage.sync.set({ [VOLUME]: 100 }),
             chrome.storage.sync.set({ [NOTIFICATION_TIME]: 4 }),
             chrome.storage.sync.set({ [SNOOZE_TIME]: 5 }),
-            chrome.storage.sync.set({ REMINDER_TIME: 20 }),
-            chrome.storage.sync.set({ 'active': true })
+            chrome.storage.sync.set({ [REMINDER_TIME]: 20 }),
+            chrome.storage.sync.set({ [ACTIVE]: true })
         ]);
     });
 }
 function getMessage(duration) {
     return `Time to rest your eyes! Look away at something 20 meters away for duration of this message (${duration}s)`;
 }
-function getNotificationCount() {
-    return __awaiter(this, void 0, void 0, function* () {
-        return new Promise((resolve, reject) => {
-            chrome.storage.sync.get(NOTIFICATION_TIME, function (result) {
-                if (chrome.runtime.lastError) {
-                    reject(chrome.runtime.lastError);
-                }
-                else {
-                    resolve(Number(result[NOTIFICATION_TIME]) || 4);
-                }
-            });
-        });
-    });
-}
-function getSnoozeTime() {
-    return __awaiter(this, void 0, void 0, function* () {
-        return new Promise((resolve, reject) => {
-            chrome.storage.sync.get(SNOOZE_TIME, function (result) {
-                if (chrome.runtime.lastError) {
-                    reject(chrome.runtime.lastError);
-                }
-                else {
-                    resolve(Number(result[SNOOZE_TIME]) || 5);
-                }
-            });
-        });
-    });
-}
 function sendNotification() {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, arguments, void 0, function* (fromPopup = false) {
         const iconUrl = chrome.runtime.getURL(ICON_URL);
         if (!notificationCount) {
-            notificationCount = yield getNotificationCount();
+            notificationCount = yield getValueFromStorage(NOTIFICATION_TIME, 4);
         }
         if (!snoozeTime) {
-            snoozeTime = yield getSnoozeTime();
+            snoozeTime = yield getValueFromStorage(SNOOZE_TIME, 5);
         }
         let duration = notificationCount * 5;
         notificationClosed = false;
@@ -270,7 +243,7 @@ function sendNotification() {
                     type: 'basic',
                     iconUrl: iconUrl,
                     title: TITLE,
-                    buttons: [{ title: getSnoozeMessage(snoozeTime) }, { title: 'Close' }],
+                    buttons: fromPopup ? [] : [{ title: getSnoozeMessage(snoozeTime) }, { title: 'Close' }],
                     message: getMessage(duration)
                 }, function (notificationId) {
                     setTimeout(() => {
@@ -293,7 +266,6 @@ function setupOffscreenDocument(path) {
             documentUrls: [offscreenUrl]
         });
         if (existingContexts.length > 0) {
-            docExists = true;
             return;
         }
         if (creating) {
@@ -307,7 +279,6 @@ function setupOffscreenDocument(path) {
             });
             yield creating;
             creating = null;
-            docExists = true;
         }
     });
 }
