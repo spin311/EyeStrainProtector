@@ -33,11 +33,11 @@ For notifications to work, you must enable them on your browser AND on your syst
 10. [GitHub page for extension](https://github.com/spin311/EyeStrainProtector)
 11. [Donate with PayPal or any credit card](https://www.paypal.com/donate/?hosted_button_id=4WXEWMN3QGLGY)
 
-![Popup Screenshot](docs/styles/popup.png)
+![Popup Screenshot](docs/imgs/popup.png)
 
 Make sure to pin the extension
 
-![Pin extension](docs/styles/pin.png)
+![Pin extension](docs/imgs/pin.png)
 
 ## Contact
 
